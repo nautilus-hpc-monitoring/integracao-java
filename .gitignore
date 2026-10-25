@@ -1,0 +1,6 @@
+*.iml
+.env
+.idea/
+arquivos-processados.txt
+target/
+ultimos-alertas.txt
