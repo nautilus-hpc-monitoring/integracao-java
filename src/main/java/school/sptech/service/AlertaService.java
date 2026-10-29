@@ -5,6 +5,7 @@ import school.sptech.dto.Componente;
 import school.sptech.dto.LeituraDto;
 import school.sptech.dto.NodeContextoDto;
 import school.sptech.repository.NodeContextoRepository;
+import school.sptech.repository.AlertaRepository;
 import school.sptech.repository.UltimosAlertasRepository;
 
 import java.time.LocalDateTime;
@@ -17,17 +18,19 @@ public class AlertaService {
     private final JiraClient jira;
     private final UltimosAlertasRepository ultimosAlertas;
     private final AlertaConfig config;
+    private final AlertaRepository alertas;
     private int totalCriados = 0;
 
     public AlertaService(NodeContextoRepository nodes, JiraClient jira,
-                         UltimosAlertasRepository ultimosAlertas, AlertaConfig config) {
+                         UltimosAlertasRepository ultimosAlertas, AlertaConfig config,
+                         AlertaRepository alertas) {
         this.nodes = nodes;
         this.jira = jira;
         this.ultimosAlertas = ultimosAlertas;
         this.config = config;
+        this.alertas = alertas;
     }
 
-    /** Avalia cada componente preenchido da leitura (CPU, RAM, SWAP, DISCO). */
     public void avaliar(LeituraDto leitura) {
         if (leituraAntiga(leitura)) {
             return;
@@ -45,8 +48,9 @@ public class AlertaService {
     }
 
     private void avaliarComponente(LeituraDto leitura, Componente componente, double percentual) {
-        Optional<Severidade> resultado = Severidade.de(percentual,
-                config.limiteAtencao(), config.limiteAlerta(), config.limiteCritico());
+        AlertaRepository.LimitesComponente limites =
+                alertas.buscarComponenteNode(leitura.hostname(), componente);
+        Optional<Severidade> resultado = Severidade.de(percentual, limites.minimo(), limites.maximo());
         if (resultado.isEmpty()) {
             return;
         }
@@ -76,11 +80,15 @@ public class AlertaService {
                 """.formatted(c.empresa(), c.hpc(), c.cluster(), c.node(), componente,
                 percentual, leitura.timestamp(), c.proprietarioNome(), c.proprietarioEmail());
 
-        String tipoId = severidade.nivel() == Severidade.Nivel.ALERTA
+        String tipoId = severidade.nivel() != Severidade.Nivel.ATENCAO
                 ? config.tipoAlertaId()
                 : config.tipoAtencaoId();
 
-        String issueKey = jira.createIssue(config.projectKey(), resumo, descricao, tipoId, severidade.prioridade());
+        // O banco limita o título a 150 caracteres; usa o mesmo título nos dois sistemas.
+        String titulo = resumo.length() > 150 ? resumo.substring(0, 150) : resumo;
+        String issueKey = jira.createIssue(config.projectKey(), titulo, descricao, tipoId, severidade.prioridade());
+        alertas.inserir(titulo, descricao, severidade.nivel().name(), percentual,
+                issueKey, leitura.timestamp(), limites.id());
 
         // Só registra depois que a issue foi criada de verdade
         ultimosAlertas.registrar(chave, leitura.timestamp());

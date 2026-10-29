@@ -36,7 +36,6 @@ public class S3LeitorService {
         this.prefixo = prefixo;
     }
 
-    /** Lista as chaves dos .csv sob o prefixo (o paginator percorre todas as páginas). */
     public List<String> listarArquivos() {
         ListObjectsV2Request req = ListObjectsV2Request.builder()
                 .bucket(bucket)
@@ -50,11 +49,6 @@ public class S3LeitorService {
                 .toList();
     }
 
-    /**
-     * Lê um CSV da silver direto do S3 (sem salvar em disco).
-     * As colunas são localizadas pelo NOME no cabeçalho (não pela posição), então
-     * o pipeline pode ganhar colunas novas sem quebrar a leitura.
-     */
     public List<LeituraDto> lerLeituras(String chave) {
         GetObjectRequest req = GetObjectRequest.builder()
                 .bucket(bucket)
@@ -83,7 +77,7 @@ public class S3LeitorService {
                     continue;
                 }
 
-                // limite -1: mantém as colunas vazias no fim da linha (componente não monitorado)
+                // limite -1: mantém as colunas vazias no fim da linha
                 String[] c = linha.split(SEPARADOR, -1);
 
                 try {

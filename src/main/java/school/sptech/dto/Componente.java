@@ -1,6 +1,5 @@
 package school.sptech.dto;
 
-/** Componentes monitorados e a coluna do CSV da silver que guarda o percentual de cada um. */
 public enum Componente {
     CPU("CPU_PERCENT"),
     RAM("RAM_PERCENT"),

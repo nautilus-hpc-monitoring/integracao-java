@@ -5,6 +5,7 @@ import school.sptech.config.AppConfig;
 import school.sptech.config.S3Provider;
 import school.sptech.dto.LeituraDto;
 import school.sptech.repository.ArquivosProcessadosRepository;
+import school.sptech.repository.AlertaRepository;
 import school.sptech.repository.NodeContextoRepository;
 import school.sptech.repository.UltimosAlertasRepository;
 import school.sptech.service.AlertaService;
@@ -31,7 +32,8 @@ public class Main {
                 new NodeContextoRepository(),
                 jira,
                 new UltimosAlertasRepository(Path.of("ultimos-alertas.txt")),
-                config);
+                config,
+                new AlertaRepository());
 
         ArquivosProcessadosRepository processados =
                 new ArquivosProcessadosRepository(Path.of("arquivos-processados.txt"));
