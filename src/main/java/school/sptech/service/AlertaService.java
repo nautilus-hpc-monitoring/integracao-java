@@ -36,7 +36,13 @@ public class AlertaService {
             return;
         }
         for (Map.Entry<Componente, Double> entrada : leitura.percentuais().entrySet()) {
+            String chaveLeitura = leitura.hostname() + "|" + entrada.getKey() + "|LEITURA";
+            if (ultimosAlertas.leituraJaAvaliada(chaveLeitura, leitura.timestamp())) {
+                continue;
+            }
             avaliarComponente(leitura, entrada.getKey(), entrada.getValue());
+            // Persiste só depois de avaliar com sucesso, inclusive quando continua normal.
+            ultimosAlertas.registrar(chaveLeitura, leitura.timestamp());
         }
     }
 
@@ -50,8 +56,20 @@ public class AlertaService {
     private void avaliarComponente(LeituraDto leitura, Componente componente, double percentual) {
         AlertaRepository.LimitesComponente limites =
                 alertas.buscarComponenteNode(leitura.hostname(), componente);
-        Optional<Severidade> resultado = Severidade.de(percentual, limites.minimo(), limites.maximo());
+        // O CSV pode incluir componentes que o usuário não selecionou no cadastro.
+        if (limites == null) {
+            return;
+        }
+
+        Optional<Severidade> resultado = componente == Componente.SWAP
+                ? Severidade.deSwap(percentual, limites.atencao(), limites.critico())
+                : Severidade.de(percentual, limites.minimo(), limites.maximo());
         if (resultado.isEmpty()) {
+            int encerrados = alertas.encerrarNormalizados(limites.id(), leitura.timestamp());
+            if (encerrados > 0) {
+                System.out.println("Alertas encerrados: " + leitura.hostname() + " / "
+                        + componente + " em " + leitura.timestamp() + " (" + encerrados + ")");
+            }
             return;
         }
         Severidade severidade = resultado.get();
