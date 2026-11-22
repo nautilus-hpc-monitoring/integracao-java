@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <title>Relatório de alertas</title>
+    <style>
+        @page { size: A4; margin: 16mm 14mm; }
+        body {
+            font-family: "Exo 2", "DejaVu Sans", sans-serif;
+            font-size: 9pt;
+            line-height: 1.5;
+            color: #1e293b;
+            background-color: #f8fafc;
+        }
+        .header {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10mm;
+        }
+        .header td { vertical-align: middle; border: 0; padding: 0; }
+        .logo-cell { width: 42px; }
+        .logo-cell img { width: 38px; height: 38px; }
+        .title-cell { padding-left: 12px !important; }
+        .eyebrow {
+            font-size: 8pt;
+            font-weight: 700;
+            letter-spacing: 1.4pt;
+            color: #247784;
+            margin: 0 0 3px 0;
+        }
+        h1 {
+            font-size: 19pt;
+            line-height: 1.2;
+            font-weight: 700;
+            letter-spacing: -0.3pt;
+            color: #0f172a;
+            margin: 0 0 4px 0;
+        }
+        .subtitle { font-size: 10pt; color: #475569; margin: 0 0 2px 0; }
+        .period { font-size: 8.5pt; color: #64748b; margin: 0; }
+        .period span { color: #0e7890; font-weight: 700; }
+
+        .kpis {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 6px 0;
+            margin-bottom: 10mm;
+        }
+        .kpi {
+            width: 25%;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-top: 3px solid #dce2e9;
+            border-radius: 12px;
+            padding: 10px 12px;
+            vertical-align: top;
+        }
+        .kpi.total { border-top-color: #0e5e75; }
+        .kpi.criticos { border-top-color: #dc2626; }
+        .kpi.alertas { border-top-color: #ea6b13; }
+        .kpi.atencao { border-top-color: #d49a00; }
+        .kpi-label {
+            font-size: 7.5pt;
+            font-weight: 700;
+            letter-spacing: 0.6pt;
+            text-transform: uppercase;
+            color: #64748b;
+            margin: 0 0 4px 0;
+        }
+        .kpi-value {
+            font-size: 20pt;
+            font-weight: 700;
+            line-height: 1.1;
+            color: #0f172a;
+            margin: 0;
+        }
+        .kpi-note { font-size: 7.5pt; color: #94a0b3; margin: 3px 0 0 0; }
+        .kpi.criticos .kpi-value { color: #dc2626; }
+        .kpi.alertas .kpi-value { color: #b45309; }
+        .kpi.atencao .kpi-value { color: #9a6b00; }
+
+        .section-title {
+            font-size: 13pt;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 3px 0;
+        }
+        .section-subtitle { font-size: 8.5pt; color: #64748b; margin: 0 0 8px 0; }
+
+        .table-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 10px 12px;
+        }
+        table.alerts { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        table.alerts th {
+            background-color: #f8fafc;
+            color: #64748b;
+            font-size: 7.5pt;
+            font-weight: 700;
+            letter-spacing: 0.5pt;
+            text-transform: uppercase;
+            text-align: left;
+            padding: 10px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        table.alerts td {
+            color: #475569;
+            font-size: 8.5pt;
+            padding: 9px 8px;
+            border-bottom: 1px solid #edf1f5;
+            vertical-align: middle;
+        }
+        table.alerts td:first-child { color: #0f172a; font-weight: 600; }
+        table.alerts tr { page-break-inside: avoid; }
+        table.alerts tr:last-child td { border-bottom: 0; }
+        .badge {
+            display: inline-block;
+            padding: 4px 9px;
+            border-radius: 20px;
+            font-size: 7.5pt;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .badge-critico { background-color: #fef2f2; color: #b91c1c; }
+        .badge-alerta { background-color: #fff1e5; color: #b45309; }
+        .badge-atencao { background-color: #fffbeb; color: #a16207; }
+        .empty {
+            background-color: #ecfdf5;
+            color: #047857;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 0;
+            font-weight: 600;
+        }
+        .footer {
+            border-top: 1px solid #f1f5f9;
+            color: #94a0b3;
+            font-size: 7.5pt;
+            margin-top: 10mm;
+            padding-top: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<table class="header">
+    <tr>
+        <td class="logo-cell"><img th:src="${logo}" src="logo.png" alt="Nautilus" /></td>
+        <td class="title-cell">
+            <p class="eyebrow">NAUTILUS • MONITORAMENTO HPC</p>
+            <h1>Relatório de alertas</h1>
+            <p class="subtitle" th:text="${empresa}">Empresa</p>
+            <p class="period">Período: <span th:text="${periodo}">período</span></p>
+        </td>
+    </tr>
+</table>
+
+<table class="kpis">
+    <tr>
+        <td class="kpi total">
+            <p class="kpi-label">Total de alertas</p>
+            <p class="kpi-value" th:text="${total}">0</p>
+            <p class="kpi-note">registrados no período</p>
+        </td>
+        <td class="kpi criticos">
+            <p class="kpi-label">Críticos</p>
+            <p class="kpi-value" th:text="${criticos}">0</p>
+            <p class="kpi-note">nível CRITICO</p>
+        </td>
+        <td class="kpi alertas">
+            <p class="kpi-label">Alertas</p>
+            <p class="kpi-value" th:text="${alertasNivel}">0</p>
+            <p class="kpi-note">nível ALERTA</p>
+        </td>
+        <td class="kpi atencao">
+            <p class="kpi-label">Atenção</p>
+            <p class="kpi-value" th:text="${atencao}">0</p>
+            <p class="kpi-note">nível ATENCAO</p>
+        </td>
+    </tr>
+</table>
+
+<h2 class="section-title">Histórico de alertas</h2>
+<p class="section-subtitle">Relação dos alertas registrados no período selecionado</p>
+
+<div class="table-card">
+    <p th:if="${#lists.isEmpty(alertas)}" class="empty">Nenhum alerta registrado no período.</p>
+
+    <table class="alerts" th:if="${not #lists.isEmpty(alertas)}">
+        <colgroup>
+            <col style="width: 22%" />
+            <col style="width: 20%" />
+            <col style="width: 15%" />
+            <col style="width: 13%" />
+            <col style="width: 12%" />
+            <col style="width: 18%" />
+        </colgroup>
+        <thead>
+        <tr>
+            <th>Horário</th>
+            <th>Hostname</th>
+            <th>Componente</th>
+            <th>Nível</th>
+            <th>Valor</th>
+            <th>Chave Jira</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="alerta : ${alertas}">
+            <td th:text="${alerta.horario()}">horário</td>
+            <td th:text="${alerta.hostname()}">hostname</td>
+            <td th:text="${alerta.componente()}">componente</td>
+            <td>
+                <span th:class="${'badge badge-' + #strings.toLowerCase(alerta.nivel())}"
+                      th:text="${alerta.nivel()}">nível</span>
+            </td>
+            <td th:text="${alerta.valor()}">valor</td>
+            <td th:text="${alerta.chaveJira()}">chave</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<p class="footer">Gerado automaticamente pelo Nautilus — <span th:text="${periodo}">período</span></p>
+
+</body>
+</html>
