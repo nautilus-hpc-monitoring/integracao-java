@@ -18,12 +18,10 @@ public class TesteRelatorioPdf {
         );
 
         EmpresaRelatorioDto dados = new EmpresaRelatorioDto(
-                "TechCorp Soluções em TI", "21/11/2026", alertas);
-
-        byte[] pdf = new RelatorioPdfService().gerar(dados);
+                1, "TechCorp Soluções em TI", "21/11/2026", alertas);
 
         Path destino = Path.of("relatorio-teste.pdf");
-        Files.write(destino, pdf);
-        System.out.println("PDF gerado: " + destino.toAbsolutePath() + " (" + pdf.length + " bytes)");
+        new RelatorioPdfService().gerar(dados, destino);
+        System.out.println("PDF gerado: " + destino.toAbsolutePath() + " (" + Files.size(destino) + " bytes)");
     }
 }

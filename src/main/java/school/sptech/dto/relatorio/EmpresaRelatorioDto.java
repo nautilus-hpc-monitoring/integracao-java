@@ -2,7 +2,7 @@ package school.sptech.dto.relatorio;
 
 import java.util.List;
 
-public record EmpresaRelatorioDto(String razaoSocial, String periodo, List<AlertaRelatorioDto> alertas) {
+public record EmpresaRelatorioDto(int idEmpresa, String razaoSocial, String periodo, List<AlertaRelatorioDto> alertas) {
 
     public long total() {
         return alertas.size();

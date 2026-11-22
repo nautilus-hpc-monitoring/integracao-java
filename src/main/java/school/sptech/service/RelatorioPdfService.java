@@ -11,6 +11,8 @@ import school.sptech.dto.relatorio.EmpresaRelatorioDto;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.Locale;
 
@@ -30,7 +32,7 @@ public class RelatorioPdfService {
         this.engine.setTemplateResolver(resolver);
     }
 
-    public byte[] gerar(EmpresaRelatorioDto dados) {
+    public byte[] gerarBytes(EmpresaRelatorioDto dados) {
         Context context = new Context(Locale.forLanguageTag("pt-BR"));
         context.setVariable("empresa", dados.razaoSocial());
         context.setVariable("periodo", dados.periodo());
@@ -55,6 +57,14 @@ public class RelatorioPdfService {
             return saida.toByteArray();
         } catch (IOException e) {
             throw new IllegalStateException("Erro gerando PDF do relatório", e);
+        }
+    }
+
+    public void gerar(EmpresaRelatorioDto dados, Path destino) {
+        try {
+            Files.write(destino, gerarBytes(dados));
+        } catch (IOException e) {
+            throw new IllegalStateException("Erro gravando PDF do relatório em " + destino, e);
         }
     }
 
