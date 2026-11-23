@@ -11,6 +11,9 @@ import java.util.List;
 
 public class RelatorioDiarioService {
 
+    public record ResultadoPublicacao(int publicados, int pulados, int falhas) {
+    }
+
     private final RelatorioRepository repository;
     private final RelatorioPdfService pdf;
 
@@ -37,6 +40,42 @@ public class RelatorioDiarioService {
             relatorios.add(repository.buscarDados(empresa, dia));
         }
         return relatorios;
+    }
+
+    public boolean publicar(int idEmpresa, LocalDate dia) {
+        try (RelatorioS3Service destino = new RelatorioS3Service()) {
+            return publicar(idEmpresa, dia, destino);
+        }
+    }
+
+    public boolean publicar(int idEmpresa, LocalDate dia, RelatorioS3Service destino) {
+        return destino.publicar(idEmpresa, dia, gerarBytes(idEmpresa, dia));
+    }
+
+    public ResultadoPublicacao publicarTodas(LocalDate dia) {
+        try (RelatorioS3Service destino = new RelatorioS3Service()) {
+            return publicarTodas(dia, destino);
+        }
+    }
+
+    public ResultadoPublicacao publicarTodas(LocalDate dia, RelatorioS3Service destino) {
+        int publicados = 0;
+        int pulados = 0;
+        int falhas = 0;
+        for (EmpresaRelatorioDto dados : montarTodas(dia)) {
+            try {
+                if (destino.publicar(dados.idEmpresa(), dia, pdf.gerarBytes(dados))) {
+                    publicados++;
+                } else {
+                    pulados++;
+                }
+            } catch (RuntimeException e) {
+                falhas++;
+                System.err.println("Falha publicando relatório da empresa " + dados.idEmpresa()
+                        + " em " + dia + ": " + e.getMessage());
+            }
+        }
+        return new ResultadoPublicacao(publicados, pulados, falhas);
     }
 
     public byte[] gerarBytes(int idEmpresa, LocalDate dia) {

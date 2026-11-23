@@ -47,7 +47,8 @@ public class RelatorioPdfService {
 
         try (ByteArrayOutputStream saida = new ByteArrayOutputStream()) {
             PdfRendererBuilder builder = new PdfRendererBuilder();
-            builder.withHtmlContent(html, "");
+            builder.useFastMode();
+            builder.withHtmlContent(html, null);
             builder.useFont(() -> recurso("/fonts/Exo2-Regular.ttf"), "Exo 2", 400, FontStyle.NORMAL, true);
             builder.useFont(() -> recurso("/fonts/Exo2-Bold.ttf"), "Exo 2", 700, FontStyle.NORMAL, true);
             builder.useFont(() -> recurso("/fonts/DejaVuSans.ttf"), "DejaVu Sans", 400, FontStyle.NORMAL, true);

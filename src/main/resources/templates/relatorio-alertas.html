@@ -1,10 +1,18 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
     <title>Relatório de alertas</title>
     <style>
-        @page { size: A4; margin: 16mm 14mm; }
+        @page {
+            size: A4;
+            margin: 16mm 14mm;
+
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 9px;
+            }
+        }
         body {
             font-family: "Exo 2", "DejaVu Sans", sans-serif;
             font-size: 9pt;
