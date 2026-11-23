@@ -13,11 +13,25 @@ import school.sptech.service.JiraClient;
 import school.sptech.service.S3LeitorService;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class Main {
 
     public static void main(String[] args) {
+        executarUmaVez();
+    }
+
+    public static void executarUmaVez() {
+        Path diretorioEstado = Path.of(AppConfig.getOuPadrao("ESTADO_ALERTAS_DIR", "."));
+        try {
+            Files.createDirectories(diretorioEstado);
+        } catch (IOException e) {
+            throw new IllegalStateException("Não foi possível criar o diretório de estado: "
+                    + diretorioEstado, e);
+        }
+
         String bucket = AppConfig.get("S3_BUCKET"); // mesmo valor do BUCKET_NAME do .env do Python
         String prefixo = AppConfig.getOuPadrao("S3_PREFIXO", "02-silver/");
 
@@ -31,12 +45,12 @@ public class Main {
         AlertaService alertas = new AlertaService(
                 new NodeContextoRepository(),
                 jira,
-                new UltimosAlertasRepository(Path.of("ultimos-alertas.txt")),
+                new UltimosAlertasRepository(diretorioEstado.resolve("ultimos-alertas.txt")),
                 config,
                 new AlertaRepository());
 
         ArquivosProcessadosRepository processados =
-                new ArquivosProcessadosRepository(Path.of("arquivos-processados.txt"));
+                new ArquivosProcessadosRepository(diretorioEstado.resolve("arquivos-processados.txt"));
 
         try (S3Client s3 = new S3Provider().getS3Client()) {
             S3LeitorService leitor = new S3LeitorService(s3, bucket, prefixo);

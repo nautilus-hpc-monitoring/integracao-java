@@ -1,0 +1,25 @@
+services:
+  alertas:
+    build: .
+    command: school.sptech.AgendarAlertas
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      TZ: America/Sao_Paulo
+      ESTADO_ALERTAS_DIR: /app/estado
+      ALERTA_INTERVALO_MIN: "5"
+    volumes:
+      - alertas-estado:/app/estado
+    stop_grace_period: 30s
+
+  relatorios:
+    build: .
+    command: school.sptech.GerarRelatoriosDiarios
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      TZ: America/Sao_Paulo
+    stop_grace_period: 30s
+
+volumes:
+  alertas-estado:

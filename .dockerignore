@@ -1,0 +1,8 @@
+.git
+.idea
+.env
+target
+*.pdf
+relatorios-teste
+arquivos-processados.txt
+ultimos-alertas.txt
