@@ -6,7 +6,6 @@ import school.sptech.dto.LeituraDto;
 import school.sptech.dto.NodeContextoDto;
 import school.sptech.repository.NodeContextoRepository;
 import school.sptech.repository.AlertaRepository;
-import school.sptech.repository.UltimosAlertasRepository;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -16,17 +15,14 @@ public class AlertaService {
 
     private final NodeContextoRepository nodes;
     private final JiraClient jira;
-    private final UltimosAlertasRepository ultimosAlertas;
     private final AlertaConfig config;
     private final AlertaRepository alertas;
     private int totalCriados = 0;
 
-    public AlertaService(NodeContextoRepository nodes, JiraClient jira,
-                         UltimosAlertasRepository ultimosAlertas, AlertaConfig config,
+    public AlertaService(NodeContextoRepository nodes, JiraClient jira, AlertaConfig config,
                          AlertaRepository alertas) {
         this.nodes = nodes;
         this.jira = jira;
-        this.ultimosAlertas = ultimosAlertas;
         this.config = config;
         this.alertas = alertas;
     }
@@ -36,19 +32,13 @@ public class AlertaService {
             return;
         }
         for (Map.Entry<Componente, Double> entrada : leitura.percentuais().entrySet()) {
-            String chaveLeitura = leitura.hostname() + "|" + entrada.getKey() + "|LEITURA";
-            if (ultimosAlertas.leituraJaAvaliada(chaveLeitura, leitura.timestamp())) {
-                continue;
-            }
             avaliarComponente(leitura, entrada.getKey(), entrada.getValue());
-            // Persiste só depois de avaliar com sucesso, inclusive quando continua normal.
-            ultimosAlertas.registrar(chaveLeitura, leitura.timestamp());
         }
     }
 
     private boolean leituraAntiga(LeituraDto leitura) {
         if (config.idadeMaxima().isZero()) {
-            return false; // 0 = não descarta nada
+            return false;
         }
         return leitura.timestamp().isBefore(LocalDateTime.now().minus(config.idadeMaxima()));
     }
@@ -56,7 +46,6 @@ public class AlertaService {
     private void avaliarComponente(LeituraDto leitura, Componente componente, double percentual) {
         AlertaRepository.LimitesComponente limites =
                 alertas.buscarComponenteNode(leitura.hostname(), componente);
-        // O CSV pode incluir componentes que o usuário não selecionou no cadastro.
         if (limites == null) {
             return;
         }
@@ -73,12 +62,6 @@ public class AlertaService {
             return;
         }
         Severidade severidade = resultado.get();
-
-        // Subir de Atençao para Alerta é outra chave, então abre issue nova na hora
-        String chave = leitura.hostname() + "|" + componente + "|" + severidade.nivel();
-        if (!ultimosAlertas.podeAlertar(chave, leitura.timestamp(), config.cooldown())) {
-            return; // já alertamos isso há pouco tempo
-        }
 
         NodeContextoDto c = nodes.buscarPorHostname(leitura.hostname())
                 .orElse(NodeContextoDto.desconhecido(leitura.hostname()));
@@ -102,14 +85,11 @@ public class AlertaService {
                 ? config.tipoAlertaId()
                 : config.tipoAtencaoId();
 
-        // O banco limita o título a 150 caracteres; usa o mesmo título nos dois sistemas.
         String titulo = resumo.length() > 150 ? resumo.substring(0, 150) : resumo;
         String issueKey = jira.createIssue(config.projectKey(), titulo, descricao, tipoId, severidade.prioridade());
         alertas.inserir(titulo, descricao, severidade.nivel().name(), percentual,
                 issueKey, leitura.timestamp(), limites.id());
 
-        // Só registra depois que a issue foi criada de verdade
-        ultimosAlertas.registrar(chave, leitura.timestamp());
         totalCriados++;
         System.out.println("Issue criada: " + issueKey + " -> " + resumo);
     }

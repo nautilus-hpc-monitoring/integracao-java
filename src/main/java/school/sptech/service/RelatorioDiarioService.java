@@ -6,10 +6,13 @@ import school.sptech.repository.RelatorioRepository.EmpresaBasica;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RelatorioDiarioService {
+
+    private static final ZoneId ZONA = RelatorioAgendamentoService.ZONA;
 
     public record ResultadoPublicacao(int publicados, int pulados, int falhas) {
     }
@@ -43,28 +46,45 @@ public class RelatorioDiarioService {
     }
 
     public boolean publicar(int idEmpresa, LocalDate dia) {
+        return publicar(idEmpresa, dia, LocalDate.now(ZONA));
+    }
+
+    public boolean publicar(int idEmpresa, LocalDate dia, LocalDate diaGeracao) {
         try (RelatorioS3Service destino = new RelatorioS3Service()) {
-            return publicar(idEmpresa, dia, destino);
+            return publicar(idEmpresa, dia, diaGeracao, destino);
         }
     }
 
     public boolean publicar(int idEmpresa, LocalDate dia, RelatorioS3Service destino) {
-        return destino.publicar(idEmpresa, dia, gerarBytes(idEmpresa, dia));
+        return publicar(idEmpresa, dia, LocalDate.now(ZONA), destino);
+    }
+
+    public boolean publicar(int idEmpresa, LocalDate dia, LocalDate diaGeracao, RelatorioS3Service destino) {
+        return destino.publicar(idEmpresa, diaGeracao, gerarBytes(idEmpresa, dia));
     }
 
     public ResultadoPublicacao publicarTodas(LocalDate dia) {
+        return publicarTodas(dia, LocalDate.now(ZONA));
+    }
+
+    public ResultadoPublicacao publicarTodas(LocalDate dia, LocalDate diaGeracao) {
         try (RelatorioS3Service destino = new RelatorioS3Service()) {
-            return publicarTodas(dia, destino);
+            return publicarTodas(dia, diaGeracao, destino);
         }
     }
 
     public ResultadoPublicacao publicarTodas(LocalDate dia, RelatorioS3Service destino) {
+        return publicarTodas(dia, LocalDate.now(ZONA), destino);
+    }
+
+    public ResultadoPublicacao publicarTodas(LocalDate diaReferencia, LocalDate diaGeracao,
+                                             RelatorioS3Service destino) {
         int publicados = 0;
         int pulados = 0;
         int falhas = 0;
-        for (EmpresaRelatorioDto dados : montarTodas(dia)) {
+        for (EmpresaRelatorioDto dados : montarTodas(diaReferencia)) {
             try {
-                if (destino.publicar(dados.idEmpresa(), dia, pdf.gerarBytes(dados))) {
+                if (destino.publicar(dados.idEmpresa(), diaGeracao, pdf.gerarBytes(dados))) {
                     publicados++;
                 } else {
                     pulados++;
@@ -72,7 +92,7 @@ public class RelatorioDiarioService {
             } catch (RuntimeException e) {
                 falhas++;
                 System.err.println("Falha publicando relatório da empresa " + dados.idEmpresa()
-                        + " em " + dia + ": " + e.getMessage());
+                        + " em " + diaReferencia + ": " + e.getMessage());
             }
         }
         return new ResultadoPublicacao(publicados, pulados, falhas);

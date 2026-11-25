@@ -8,20 +8,22 @@ public class GerarRelatoriosDiarios {
 
     public static void main(String[] args) {
         LocalDate dia = null;
-        boolean umaVez = false;
+        boolean agendar = false;
+        boolean lookback = false;
 
         for (String arg : args) {
             if ("--once".equals(arg)) {
-                umaVez = true;
+                continue;
+            } else if ("--agendar".equals(arg)) {
+                agendar = true;
+            } else if ("--lookback".equals(arg)) {
+                lookback = true;
             } else if (arg.startsWith("--dia=")) {
                 dia = LocalDate.parse(arg.substring("--dia=".length()));
             } else {
                 throw new IllegalArgumentException(
-                        "Argumento desconhecido: " + arg + ". Use --once ou --dia=AAAA-MM-DD");
+                        "Argumento desconhecido: " + arg + ". Use --once, --agendar, --lookback ou --dia=AAAA-MM-DD");
             }
-        }
-        if (dia != null) {
-            umaVez = true;
         }
 
         RelatorioAgendamentoService servico = new RelatorioAgendamentoService();
@@ -30,10 +32,12 @@ public class GerarRelatoriosDiarios {
         try {
             if (dia != null) {
                 System.out.println("Relatórios de " + dia + ": " + servico.publicarDia(dia));
-            } else {
+            } else if (lookback) {
                 System.out.println("Catch-up: " + servico.publicarUltimosDias());
+            } else {
+                System.out.println("Relatório do dia anterior: " + servico.publicarOntem());
             }
-            if (!umaVez) {
+            if (agendar) {
                 servico.iniciar();
             }
         } catch (RuntimeException e) {

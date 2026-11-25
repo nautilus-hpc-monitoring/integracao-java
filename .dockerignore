@@ -1,7 +1,8 @@
 .git
 .idea
 .env
-target
+target/*
+!target/monitoramento-alertas-1.0-SNAPSHOT.jar
 *.pdf
 relatorios-teste
 arquivos-processados.txt

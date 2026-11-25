@@ -35,12 +35,12 @@ public class RelatorioS3Service implements AutoCloseable {
         this.ownsClient = ownsClient;
     }
 
-    public static String chave(int idEmpresa, LocalDate dia) {
-        return PREFIXO + "empresa-" + idEmpresa + "/" + dia + ".pdf";
+    public static String chave(int idEmpresa, LocalDate diaGeracao) {
+        return PREFIXO + "empresa-" + idEmpresa + "/" + diaGeracao + ".pdf";
     }
 
-    public boolean existe(int idEmpresa, LocalDate dia) {
-        return existe(chave(idEmpresa, dia));
+    public boolean existe(int idEmpresa, LocalDate diaGeracao) {
+        return existe(chave(idEmpresa, diaGeracao));
     }
 
     public boolean existe(String chave) {
@@ -59,8 +59,8 @@ public class RelatorioS3Service implements AutoCloseable {
         }
     }
 
-    public boolean publicar(int idEmpresa, LocalDate dia, byte[] pdf) {
-        String chave = chave(idEmpresa, dia);
+    public boolean publicar(int idEmpresa, LocalDate diaGeracao, byte[] pdf) {
+        String chave = chave(idEmpresa, diaGeracao);
         if (existe(chave)) {
             System.out.println("PDF já existe no S3, pulando: " + chave);
             return false;
@@ -78,10 +78,10 @@ public class RelatorioS3Service implements AutoCloseable {
         return true;
     }
 
-    public byte[] baixar(int idEmpresa, LocalDate dia) {
+    public byte[] baixar(int idEmpresa, LocalDate diaGeracao) {
         GetObjectRequest req = GetObjectRequest.builder()
                 .bucket(bucket)
-                .key(chave(idEmpresa, dia))
+                .key(chave(idEmpresa, diaGeracao))
                 .build();
         return s3.getObject(req, ResponseTransformer.toBytes()).asByteArray();
     }

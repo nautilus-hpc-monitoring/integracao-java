@@ -42,7 +42,18 @@ public class RelatorioAgendamentoService implements AutoCloseable {
     }
 
     public ResultadoPublicacao publicarDia(LocalDate dia) {
-        return relatorios.publicarTodas(dia);
+        return publicar(dia, LocalDate.now(ZONA));
+    }
+
+    public ResultadoPublicacao publicarOntem() {
+        LocalDate hoje = LocalDate.now(ZONA);
+        return publicar(hoje.minusDays(1), hoje);
+    }
+
+    private ResultadoPublicacao publicar(LocalDate diaReferencia, LocalDate diaGeracao) {
+        try (RelatorioS3Service destino = new RelatorioS3Service()) {
+            return relatorios.publicarTodas(diaReferencia, diaGeracao, destino);
+        }
     }
 
     public ResultadoPublicacao publicarUltimosDias() {
@@ -54,7 +65,7 @@ public class RelatorioAgendamentoService implements AutoCloseable {
             for (int diasAtras = lookbackDias; diasAtras >= 1; diasAtras--) {
                 LocalDate dia = hoje.minusDays(diasAtras);
                 try {
-                    ResultadoPublicacao resultado = relatorios.publicarTodas(dia, destino);
+                    ResultadoPublicacao resultado = relatorios.publicarTodas(dia, hoje, destino);
                     publicados += resultado.publicados();
                     pulados += resultado.pulados();
                     falhas += resultado.falhas();
@@ -84,7 +95,7 @@ public class RelatorioAgendamentoService implements AutoCloseable {
         executor.schedule(() -> {
             try {
                 System.out.println("Executando rotina diária de relatórios...");
-                publicarUltimosDias();
+                publicarOntem();
             } catch (RuntimeException e) {
                 System.err.println("Falha na rotina diária de relatórios: " + e.getMessage());
             } finally {
