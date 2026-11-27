@@ -11,11 +11,14 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class RelatorioS3Service implements AutoCloseable {
 
     private static final String PREFIXO = "04-relatorios/";
+    private static final DateTimeFormatter FORMATO_INSTANTE =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd/HH-mm-ss.SSS");
 
     private final S3Client s3;
     private final String bucket;
@@ -35,12 +38,13 @@ public class RelatorioS3Service implements AutoCloseable {
         this.ownsClient = ownsClient;
     }
 
-    public static String chave(int idEmpresa, LocalDate diaGeracao) {
-        return PREFIXO + "empresa-" + idEmpresa + "/" + diaGeracao + ".pdf";
+    public static String chave(int idEmpresa, LocalDateTime instanteGeracao) {
+        return PREFIXO + "id_empresa=" + idEmpresa + "/"
+                + instanteGeracao.format(FORMATO_INSTANTE) + ".pdf";
     }
 
-    public boolean existe(int idEmpresa, LocalDate diaGeracao) {
-        return existe(chave(idEmpresa, diaGeracao));
+    public boolean existe(int idEmpresa, LocalDateTime instanteGeracao) {
+        return existe(chave(idEmpresa, instanteGeracao));
     }
 
     public boolean existe(String chave) {
@@ -59,12 +63,8 @@ public class RelatorioS3Service implements AutoCloseable {
         }
     }
 
-    public boolean publicar(int idEmpresa, LocalDate diaGeracao, byte[] pdf) {
-        String chave = chave(idEmpresa, diaGeracao);
-        if (existe(chave)) {
-            System.out.println("PDF já existe no S3, pulando: " + chave);
-            return false;
-        }
+    public boolean publicar(int idEmpresa, LocalDateTime instanteGeracao, byte[] pdf) {
+        String chave = chave(idEmpresa, instanteGeracao);
 
         s3.putObject(PutObjectRequest.builder()
                         .bucket(bucket)
@@ -78,10 +78,10 @@ public class RelatorioS3Service implements AutoCloseable {
         return true;
     }
 
-    public byte[] baixar(int idEmpresa, LocalDate diaGeracao) {
+    public byte[] baixar(int idEmpresa, LocalDateTime instanteGeracao) {
         GetObjectRequest req = GetObjectRequest.builder()
                 .bucket(bucket)
-                .key(chave(idEmpresa, diaGeracao))
+                .key(chave(idEmpresa, instanteGeracao))
                 .build();
         return s3.getObject(req, ResponseTransformer.toBytes()).asByteArray();
     }

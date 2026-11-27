@@ -6,6 +6,7 @@ import school.sptech.repository.RelatorioRepository.EmpresaBasica;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,45 +47,46 @@ public class RelatorioDiarioService {
     }
 
     public boolean publicar(int idEmpresa, LocalDate dia) {
-        return publicar(idEmpresa, dia, LocalDate.now(ZONA));
+        return publicar(idEmpresa, dia, LocalDateTime.now(ZONA));
     }
 
-    public boolean publicar(int idEmpresa, LocalDate dia, LocalDate diaGeracao) {
+    public boolean publicar(int idEmpresa, LocalDate dia, LocalDateTime instanteGeracao) {
         try (RelatorioS3Service destino = new RelatorioS3Service()) {
-            return publicar(idEmpresa, dia, diaGeracao, destino);
+            return publicar(idEmpresa, dia, instanteGeracao, destino);
         }
     }
 
     public boolean publicar(int idEmpresa, LocalDate dia, RelatorioS3Service destino) {
-        return publicar(idEmpresa, dia, LocalDate.now(ZONA), destino);
+        return publicar(idEmpresa, dia, LocalDateTime.now(ZONA), destino);
     }
 
-    public boolean publicar(int idEmpresa, LocalDate dia, LocalDate diaGeracao, RelatorioS3Service destino) {
-        return destino.publicar(idEmpresa, diaGeracao, gerarBytes(idEmpresa, dia));
+    public boolean publicar(int idEmpresa, LocalDate dia, LocalDateTime instanteGeracao,
+                            RelatorioS3Service destino) {
+        return destino.publicar(idEmpresa, instanteGeracao, gerarBytes(idEmpresa, dia));
     }
 
     public ResultadoPublicacao publicarTodas(LocalDate dia) {
-        return publicarTodas(dia, LocalDate.now(ZONA));
+        return publicarTodas(dia, LocalDateTime.now(ZONA));
     }
 
-    public ResultadoPublicacao publicarTodas(LocalDate dia, LocalDate diaGeracao) {
+    public ResultadoPublicacao publicarTodas(LocalDate dia, LocalDateTime instanteGeracao) {
         try (RelatorioS3Service destino = new RelatorioS3Service()) {
-            return publicarTodas(dia, diaGeracao, destino);
+            return publicarTodas(dia, instanteGeracao, destino);
         }
     }
 
     public ResultadoPublicacao publicarTodas(LocalDate dia, RelatorioS3Service destino) {
-        return publicarTodas(dia, LocalDate.now(ZONA), destino);
+        return publicarTodas(dia, LocalDateTime.now(ZONA), destino);
     }
 
-    public ResultadoPublicacao publicarTodas(LocalDate diaReferencia, LocalDate diaGeracao,
+    public ResultadoPublicacao publicarTodas(LocalDate diaReferencia, LocalDateTime instanteGeracao,
                                              RelatorioS3Service destino) {
         int publicados = 0;
         int pulados = 0;
         int falhas = 0;
         for (EmpresaRelatorioDto dados : montarTodas(diaReferencia)) {
             try {
-                if (destino.publicar(dados.idEmpresa(), diaGeracao, pdf.gerarBytes(dados))) {
+                if (destino.publicar(dados.idEmpresa(), instanteGeracao, pdf.gerarBytes(dados))) {
                     publicados++;
                 } else {
                     pulados++;

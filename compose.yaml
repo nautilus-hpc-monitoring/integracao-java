@@ -6,4 +6,5 @@ services:
     env_file: .env
     environment:
       TZ: America/Sao_Paulo
+      RELATORIO_INTERVALO_MINUTOS: "60"
     stop_grace_period: 30s
